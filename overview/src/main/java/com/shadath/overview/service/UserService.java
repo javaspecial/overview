@@ -1,8 +1,21 @@
 package com.shadath.overview.service;
 
+import com.shadath.overview.authentication.JWTToken;
+import com.shadath.overview.domain.Role;
 import com.shadath.overview.domain.User;
+import com.shadath.overview.model.MessageResponse;
+import com.shadath.overview.model.TokenRequest;
+import com.shadath.overview.model.enums.RoleType;
+import com.shadath.overview.repository.RoleRepo;
 import com.shadath.overview.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -10,44 +23,88 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 @Service
 public class UserService implements UserDetailsService {
-
+    @Autowired
+    PasswordEncoder encoder;
     @Autowired
     private UserRepo userRepo;
-
     @Autowired
-    private PasswordEncoder bcryptEncoder;
+    private RoleRepo roleRepo;
+    @Autowired
+    private JWTToken jwtToken;
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = null;
+        User user = this.userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), new ArrayList<>());
+    }
+
+    public String authenticateToken(TokenRequest authenticationRequest) throws Exception {
+        this.authenticate(authenticationRequest.getUsername(), authenticationRequest.getPassword());
+        final UserDetails userDetails = this.loadUserByUsername(authenticationRequest.getUsername());
+        return jwtToken.generateToken(userDetails);
+    }
+
+    private void authenticate(String username, String password) throws Exception {
         try {
-            user = this.userRepo.findByUsername(username);
-            if (user == null) {
-                throw new UsernameNotFoundException("User not found with username: " + username);
-            }
-            return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), new ArrayList<>());
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+        }
+        catch (DisabledException e) {
+            throw new Exception("USER_DISABLED", e);
+        }
+        catch (BadCredentialsException e) {
+            throw new Exception("INVALID_CREDENTIALS", e);
         }
         finally {
-            user = null;
+            username = password = null;
         }
     }
 
-    public User save(User user) {
-        User newUser = null;
+    public ResponseEntity<MessageResponse> doRegister(TokenRequest tokenRequest) {
         try {
-            if (this.userRepo.findByUsername(user.getUsername()) != null) {
-                throw new UsernameNotFoundException("User name already exist: " + user.getUsername());
+            if (this.userRepo.existsByUsername(tokenRequest.getUsername())) {
+                return ResponseEntity.badRequest().body(new MessageResponse("User name is already taken"));
             }
-            newUser = new User();
-            newUser.setUsername(user.getUsername());
-            newUser.setPassword(bcryptEncoder.encode(user.getPassword()));
-            return this.userRepo.save(newUser);
+            User user = new User(tokenRequest.getUsername(), encoder.encode(tokenRequest.getPassword()));
+            Set<String> stringRoles = tokenRequest.getRoles();
+            Set<Role> roles = new HashSet<>();
+            if (stringRoles == null) {
+                roles.add(roleRepo.findByRoleType(RoleType.USER).orElseThrow(() -> new RuntimeException("Role not found")));
+            }
+            else {
+                stringRoles.forEach(role -> {
+                    switch (role) {
+                        case "ADMIN":
+                            roles.add(roleRepo.findByRoleType(RoleType.ADMIN).orElseThrow(() -> new RuntimeException("Role not found")));
+                            break;
+                        case "MODERATOR":
+                            roles.add(roleRepo.findByRoleType(RoleType.MODERATOR).orElseThrow(() -> new RuntimeException("Role not found")));
+                            break;
+                        default:
+                            roles.add(roleRepo.findByRoleType(RoleType.USER).orElseThrow(() -> new RuntimeException("Role not found")));
+                    }
+                });
+            }
+            user.setRoles(roles);
+            this.userRepo.save(user);
+            return ResponseEntity.ok().body(new MessageResponse("User registered successfully!"));
         }
         finally {
-            user = null;
+            tokenRequest = null;
         }
+    }
+
+    public ResponseEntity<MessageResponse> doLogin(TokenRequest tokenRequest) {
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(tokenRequest.getUsername(), tokenRequest.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = jwtToken.generateJwtToken(authentication);
+        User userDetails = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(new MessageResponse("Logged in Successfully"));
     }
 }

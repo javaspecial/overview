@@ -15,8 +15,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import java.net.ServerSocket;
-
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(
@@ -24,7 +22,7 @@ import java.net.ServerSocket;
         jsr250Enabled = true,
         prePostEnabled = true
 )
-public class WebSecurity extends WebSecurityConfigurerAdapter {
+public class JWTWebSecurity extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private JWTAuthentication jwtAuthentication;

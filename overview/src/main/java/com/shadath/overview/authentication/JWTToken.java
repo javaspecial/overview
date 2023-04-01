@@ -5,6 +5,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -54,6 +56,16 @@ public class JWTToken implements Serializable {
 
     public Boolean validateToken(String token, UserDetails userDetails) {
         return (getUsernameFromToken(token).equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    public String generateJwtToken(Authentication authentication) {
+        User userPrincipal = (User) authentication.getPrincipal();
+        return Jwts.builder()
+                .setSubject((userPrincipal.getUsername()))
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY * 1000))
+                .signWith(SignatureAlgorithm.HS512, secret)
+                .compact();
     }
 }
 
