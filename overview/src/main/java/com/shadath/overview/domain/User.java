@@ -20,7 +20,7 @@ public class User {
     private String username;
 
     @JsonIgnore
-    @Size(max = 20)
+    @Size(max = 80)
     @Column(nullable = false)
     private String password;
 
