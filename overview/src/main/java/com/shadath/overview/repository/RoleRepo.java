@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface RoleRepo extends CrudRepository<Role, Long> {
-    Optional<Role> findByRoleType(RoleType roleType);
+    Optional<Role> findTopByRoleTypeOrderByIdDesc(RoleType roleType);
 }

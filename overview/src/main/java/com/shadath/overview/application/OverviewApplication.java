@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
@@ -13,6 +14,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @ComponentScan({"com.shadath.overview"})
 @EntityScan("com.shadath.overview.domain")
 @EnableJpaRepositories("com.shadath.overview.repository")
+@EnableAspectJAutoProxy(proxyTargetClass = true)
 public class OverviewApplication {
 	private static ConfigurableApplicationContext applicationContext;
 

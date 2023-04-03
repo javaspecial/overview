@@ -80,19 +80,19 @@ public class UserService implements UserDetailsService {
             Set<String> stringRoles = tokenRequest.getRoles();
             Set<Role> roles = new HashSet<>();
             if (stringRoles == null) {
-                roles.add(this.roleRepo.findByRoleType(RoleType.USER).orElseThrow(() -> new RuntimeException("Role not found")));
+                roles.add(this.roleRepo.findTopByRoleTypeOrderByIdDesc(RoleType.USER).orElseThrow(() -> new RuntimeException("Role not found")));
             }
             else {
                 stringRoles.forEach(role -> {
                     switch (role) {
                         case "ADMIN":
-                            roles.add(this.roleRepo.findByRoleType(RoleType.ADMIN).orElseThrow(() -> new RuntimeException("Role not found")));
+                            roles.add(this.roleRepo.findTopByRoleTypeOrderByIdDesc(RoleType.ADMIN).orElseThrow(() -> new RuntimeException("Role not found")));
                             break;
                         case "MODERATOR":
-                            roles.add(this.roleRepo.findByRoleType(RoleType.MODERATOR).orElseThrow(() -> new RuntimeException("Role not found")));
+                            roles.add(this.roleRepo.findTopByRoleTypeOrderByIdDesc(RoleType.MODERATOR).orElseThrow(() -> new RuntimeException("Role not found")));
                             break;
                         default:
-                            roles.add(this.roleRepo.findByRoleType(RoleType.USER).orElseThrow(() -> new RuntimeException("Role not found")));
+                            roles.add(this.roleRepo.findTopByRoleTypeOrderByIdDesc(RoleType.USER).orElseThrow(() -> new RuntimeException("Role not found")));
                     }
                 });
             }
