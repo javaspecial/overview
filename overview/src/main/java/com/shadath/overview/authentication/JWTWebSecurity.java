@@ -1,5 +1,6 @@
 package com.shadath.overview.authentication;
 
+import com.shadath.overview.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,14 +29,14 @@ public class JWTWebSecurity extends WebSecurityConfigurerAdapter {
     private JWTAuthentication jwtAuthentication;
 
     @Autowired
-    private UserDetailsService userDetailsService;
+    private UserService userService;
 
     @Autowired
     private JWTRequest jwtRequest;
 
     @Autowired
     public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+        auth.userDetailsService(userService).passwordEncoder(passwordEncoder());
     }
 
     @Bean

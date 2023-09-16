@@ -1,5 +1,6 @@
 package com.shadath.overview.service;
 
+import com.shadath.overview.ServiceBase.ServiceBase;
 import com.shadath.overview.authentication.JWTToken;
 import com.shadath.overview.domain.Role;
 import com.shadath.overview.domain.User;
@@ -25,14 +26,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class UserService implements UserDetailsService {
+public class UserService implements UserDetailsService, ServiceBase {
     @Autowired
     PasswordEncoder encoder;
     @Autowired
@@ -47,7 +45,8 @@ public class UserService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = this.userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), new ArrayList<>());
+        UserDetails userDetails = UserDetailsExtended.build(user);
+        return userDetails;
     }
 
     public String authenticateToken(TokenRequest authenticationRequest) throws Exception {

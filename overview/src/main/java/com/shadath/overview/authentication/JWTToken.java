@@ -1,6 +1,7 @@
 package com.shadath.overview.authentication;
 
 
+import com.shadath.overview.model.UserDetailsExtended;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -59,7 +60,7 @@ public class JWTToken implements Serializable {
     }
 
     public String generateJwtToken(Authentication authentication) {
-        User userPrincipal = (User) authentication.getPrincipal();
+        UserDetailsExtended userPrincipal = (UserDetailsExtended) authentication.getPrincipal();
         return Jwts.builder()
                 .setSubject((userPrincipal.getUsername()))
                 .setIssuedAt(new Date())
